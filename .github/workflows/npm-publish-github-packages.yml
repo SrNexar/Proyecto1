@@ -1,0 +1,51 @@
+# Este flujo de trabajo ejecutará pruebas usando Node.js y luego publicará un paquete en GitHub Packages cuando se cree un lanzamiento
+# Para obtener más información, consulte: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+
+name: Node.js Package
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 21.6.2
+      - run: npm ci
+      - run: npm test
+
+  publish-gpr:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 21.6.2
+          registry-url: https://npm.pkg.github.com/
+      - run: npm ci
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Deploy to Railway
+        if: github.ref == 'refs/heads/main'  # Asegúrate de que solo se despliegue desde la rama principal
+        uses: bervProject/railway-deploy@main
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}  # Asegúrate de tener configurado este secreto en la configuración de tu repositorio
+          service: "Proyecto1"  # Reemplaza "ci-test" con el nombre de tu servicio en Railway
+

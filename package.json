@@ -2,9 +2,12 @@
 
   "scripts": {
 
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js", 
+    "start": "node server.js" 
 
   },
+
+  
 
   "dependencies": {
 
